@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:physiq/services/auth_service.dart';
-import 'package:physiq/services/firestore_service.dart';
-import 'package:physiq/services/local_storage.dart';
 import 'package:physiq/theme/design_system.dart';
+import 'package:physiq/viewmodels/onboarding_viewmodel.dart';
 
-// Importing all the individual step widgets from the same directory.
+// Importing all the individual step widgets
 import 'gender_step.dart';
 import 'birthyear_step.dart';
 import 'height_weight_step.dart';
@@ -14,65 +13,27 @@ import 'goal_step.dart';
 import 'target_weight_step.dart';
 import 'timeframe_step.dart';
 
-/// A multi-step onboarding screen that guides the user through
-/// setting up their initial profile.
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
-  final LocalStorageService _localStorage = LocalStorageService();
-  final FirestoreService _firestoreService = FirestoreService();
-  final AuthService _authService = AuthService();
-
-  // A map to hold the collected onboarding data.
-  Map<String, dynamic> _draft = {};
   int _currentStep = 0;
 
-  // The list of step widgets.
-  late final List<Widget> _steps;
-
   @override
-  void initState() {
-    super.initState();
-    _initializeSteps();
-    _loadDraft();
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
-  /// Loads a previously saved draft from local storage.
-  Future<void> _loadDraft() async {
-    final draft = await _localStorage.loadOnboardingDraft();
-    if (draft != null) {
-      setState(() {
-        _draft = draft;
-        _initializeSteps(); // Re-initialize steps with loaded data
-      });
-      print("Onboarding draft loaded: $_draft");
-    }
-  }
-
-  /// Saves the current onboarding draft to local storage and Firestore.
-  Future<void> _saveDraft() async {
-    await _localStorage.saveOnboardingDraft(_draft);
-
-    final user = _authService.getCurrentUser();
-    if (user != null && !AppConfig.useMockBackend) {
-      // This is where you would save the draft to Firestore.
-      // e.g., await _firestoreService.saveOnboardingDraft(user.uid, _draft);
-      print("Draft saved to Firestore (simulated).");
-    }
-  }
-
-  /// Handles moving to the next step or completing the flow.
   void _onNext() {
-    // A simple validation placeholder.
-    if (_isStepValid()) {
-      if (_currentStep < _steps.length - 1) {
-        _saveDraft(); // Save draft after each valid step.
+    final state = ref.read(onboardingProvider);
+    if (_isStepValid(state)) {
+      if (_currentStep < 6) { // 7 steps total (0-6)
         _pageController.nextPage(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
@@ -83,101 +44,159 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
-  /// Finalizes the onboarding process.
-  Future<void> _onComplete() async {
-    await _saveDraft();
-    await _localStorage.clearOnboardingDraft(); // Clean up the local draft.
-
-    // Here you would finalize the profile on your backend.
-    // e.g., await _firestoreService.finalizeOnboarding(_authService.getCurrentUser()!.uid, _draft);
-    print("Onboarding complete!");
-
-    if (mounted) {
-      context.go('/loading');
-    }
-  }
-
-  /// Updates the draft with new data from a step.
-  void _updateDraft(String key, dynamic value) {
-    setState(() {
-      _draft[key] = value;
-    });
-  }
-
-  /// Placeholder for step-specific validation.
-  bool _isStepValid() {
-    // In a real app, you would have specific validation logic per step.
-    // For example, checking if a gender has been selected.
-    if (_currentStep == 0 && _draft['gender'] == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a gender.')),
+  void _onBack() {
+    if (_currentStep > 0) {
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
       );
-      return false;
+    } else {
+      context.pop();
     }
-    return true;
-  }
-  
-  /// Initializes or re-initializes the list of step widgets.
-  /// This is necessary to pass the latest draft data to each step.
-  void _initializeSteps() {
-    _steps = [
-      GenderStep(
-        gender: _draft['gender'],
-        onChanged: (val) => _updateDraft('gender', val),
-      ),
-      BirthYearStep(
-        birthYear: _draft['birthYear'],
-        onChanged: (val) => _updateDraft('birthYear', val),
-      ),
-      HeightWeightStep(
-        height: _draft['height'],
-        weight: _draft['weight'],
-        onChanged: (height, weight) {
-          _updateDraft('height', height);
-          _updateDraft('weight', weight);
-        },
-      ),
-      ActivityStep(
-        activityLevel: _draft['activityLevel'],
-        onChanged: (val) => _updateDraft('activityLevel', val),
-      ),
-      GoalStep(
-        goal: _draft['goal'],
-        onChanged: (val) => _updateDraft('goal', val),
-      ),
-      TargetWeightStep(
-        targetWeight: _draft['targetWeight'],
-        onChanged: (val) => _updateDraft('targetWeight', val),
-      ),
-      TimeframeStep(
-        timeframe: _draft['timeframe'],
-        onChanged: (val) => _updateDraft('timeframe', val),
-      ),
-    ];
   }
 
+  bool _isStepValid(OnboardingState state) {
+    switch (_currentStep) {
+      case 0: // Gender
+        if (state.gender == null) {
+          _showError('Please select a gender.');
+          return false;
+        }
+        return true;
+      case 1: // Birth Year
+        if (state.birthYear == null) {
+          _showError('Please select your birth year.');
+          return false;
+        }
+        return true;
+      case 2: // Height & Weight
+        if (state.height == null || state.weight == null) {
+          _showError('Please enter your height and weight.');
+          return false;
+        }
+        // Validate ranges
+        if (state.height! < 100 || state.height! > 230) {
+          _showError('Height must be between 100cm and 230cm.');
+          return false;
+        }
+        if (state.weight! < 30 || state.weight! > 300) {
+          _showError('Weight must be between 30kg and 300kg.');
+          return false;
+        }
+        return true;
+      case 3: // Activity
+        if (state.activityLevel == null) {
+          _showError('Please select your activity level.');
+          return false;
+        }
+        return true;
+      case 4: // Goal
+        if (state.goal == null) {
+          _showError('Please select a goal.');
+          return false;
+        }
+        return true;
+      case 5: // Target Weight
+        if (state.targetWeight == null) {
+          _showError('Please enter a target weight.');
+          return false;
+        }
+        // Validate within +/- 50% of current weight
+        final currentWeight = state.weight!;
+        final min = currentWeight * 0.5;
+        final max = currentWeight * 1.5;
+        if (state.targetWeight! < min || state.targetWeight! > max) {
+           _showError('Target weight must be within 50% of your current weight ($min - $max).');
+           return false;
+        }
+        return true;
+      case 6: // Timeframe
+        if (state.timeframeMonths == null) {
+          _showError('Please select a timeframe.');
+          return false;
+        }
+        return true;
+      default:
+        return true;
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
+  Future<void> _onComplete() async {
+    // Navigate to Loading Screen which will trigger generation
+    context.go('/loading');
+  }
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(onboardingProvider);
+    final viewModel = ref.read(onboardingProvider.notifier);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("Step ${_currentStep + 1} of ${_steps.length}"),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _onBack,
+        ),
+        title: LinearProgressIndicator(
+          value: (_currentStep + 1) / 7,
+          backgroundColor: AppColors.surface,
+          color: AppColors.primary,
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
       ),
-      body: PageView.builder(
+      body: PageView(
         controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(), // Disables swiping.
-        itemCount: _steps.length,
+        physics: const NeverScrollableScrollPhysics(),
         onPageChanged: (index) {
           setState(() {
             _currentStep = index;
           });
         },
-        itemBuilder: (context, index) {
-          return _steps[index];
-        },
+        children: [
+          GenderStep(
+            gender: state.gender,
+            onChanged: viewModel.updateGender,
+          ),
+          BirthYearStep(
+            birthYear: state.birthYear,
+            onChanged: viewModel.updateBirthYear,
+          ),
+          HeightWeightStep(
+            height: state.height,
+            weight: state.weight,
+            isMetric: state.isMetric,
+            onMetricChanged: viewModel.toggleMetric,
+            onChanged: (h, w) {
+              viewModel.updateHeight(h);
+              viewModel.updateWeight(w);
+            },
+          ),
+          ActivityStep(
+            activityLevel: state.activityLevel,
+            onChanged: viewModel.updateActivityLevel,
+          ),
+          GoalStep(
+            goal: state.goal,
+            onChanged: viewModel.updateGoal,
+          ),
+          TargetWeightStep(
+            targetWeight: state.targetWeight,
+            onChanged: viewModel.updateTargetWeight,
+            isMetric: state.isMetric,
+          ),
+          TimeframeStep(
+            timeframe: state.timeframeMonths,
+            onChanged: viewModel.updateTimeframe,
+          ),
+        ],
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
@@ -191,7 +210,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
           onPressed: _onNext,
           child: Text(
-            _currentStep == _steps.length - 1 ? 'Calculate My Plan' : 'Next',
+            _currentStep == 6 ? 'Generate Plan' : 'Continue',
             style: AppTextStyles.button,
           ),
         ),

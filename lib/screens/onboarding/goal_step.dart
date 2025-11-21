@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:physiq/theme/design_system.dart';
 
 class GoalStep extends StatelessWidget {
   final String? goal;
@@ -13,27 +14,43 @@ class GoalStep extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('What is Your Goal?', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 20),
-          RadioListTile<String>(
-            title: const Text('Lose Weight'),
-            value: 'lose_weight',
-            groupValue: goal,
-            onChanged: (value) => onChanged(value!),
-          ),
-          RadioListTile<String>(
-            title: const Text('Maintain Weight'),
-            value: 'maintain_weight',
-            groupValue: goal,
-            onChanged: (value) => onChanged(value!),
-          ),
-          RadioListTile<String>(
-            title: const Text('Gain Weight'),
-            value: 'gain_weight',
-            groupValue: goal,
-            onChanged: (value) => onChanged(value!),
-          ),
+          Text('What is Your Goal?', style: AppTextStyles.h2),
+          const SizedBox(height: 32),
+          _buildOption('Lose Weight', 'lose'),
+          const SizedBox(height: 16),
+          _buildOption('Maintain Weight', 'maintain'),
+          const SizedBox(height: 16),
+          _buildOption('Gain Weight', 'gain'),
         ],
+      ),
+    );
+  }
+
+  Widget _buildOption(String label, String value) {
+    final isSelected = goal == value;
+    return InkWell(
+      onTap: () => onChanged(value),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.white,
+          border: Border.all(
+            color: isSelected ? AppColors.primary : Colors.grey[200]!,
+            width: 2,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: AppTextStyles.body.copyWith(
+              fontWeight: FontWeight.bold,
+              color: isSelected ? AppColors.primary : Colors.black,
+            ),
+          ),
+        ),
       ),
     );
   }

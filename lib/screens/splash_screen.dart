@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:physiq/services/auth_service.dart';
+import 'package:physiq/theme/design_system.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,41 +13,39 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAuthStatus();
+    _navigateToNext();
   }
 
-  Future<void> _checkAuthStatus() async {
-    // Give the splash screen a moment to be visible.
-    await Future.delayed(const Duration(seconds: 1));
-
-    final authService = AuthService();
-    final user = authService.getCurrentUser();
-
-    if (user != null) {
-      // Here you would check if the user has completed onboarding.
-      // For this example, we'll assume they haven't.
-      final bool hasOnboarded = false; // Replace with actual logic
-
-      if (mounted) {
-        if (hasOnboarded) {
-          context.go('/home');
-        } else {
-          context.go('/onboarding'); // Placeholder for onboarding flow
-        }
-      }
-    } else {
-      if (mounted) {
-        context.go('/get-started');
-      }
+  _navigateToNext() async {
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) {
+      context.go('/get-started');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
+      backgroundColor: AppColors.background,
       body: Center(
-        // Placeholder for the Physiq app logo
-        child: FlutterLogo(size: 100),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Logo placeholder or Text
+            Text(
+              'Physiq',
+              style: AppTextStyles.h1.copyWith(fontSize: 48),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Build your dream body',
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.textSecondary,
+                fontSize: 18,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

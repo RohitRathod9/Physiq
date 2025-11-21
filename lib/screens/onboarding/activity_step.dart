@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:physiq/theme/design_system.dart';
 
 class ActivityStep extends StatelessWidget {
-  final String? activityLevel;
-  final ValueChanged<String> onChanged;
+  final double? activityLevel;
+  final ValueChanged<double> onChanged;
 
   const ActivityStep({super.key, this.activityLevel, required this.onChanged});
 
@@ -13,34 +14,26 @@ class ActivityStep extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('Select Your Activity Level', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          Text('Activity & Lifestyle', style: AppTextStyles.h2),
           const SizedBox(height: 20),
-          RadioListTile<String>(
-            title: const Text('Sedentary'),
-            value: 'sedentary',
-            groupValue: activityLevel,
-            onChanged: (value) => onChanged(value!),
-          ),
-          RadioListTile<String>(
-            title: const Text('Lightly Active'),
-            value: 'lightly_active',
-            groupValue: activityLevel,
-            onChanged: (value) => onChanged(value!),
-          ),
-          RadioListTile<String>(
-            title: const Text('Moderately Active'),
-            value: 'moderately_active',
-            groupValue: activityLevel,
-            onChanged: (value) => onChanged(value!),
-          ),
-          RadioListTile<String>(
-            title: const Text('Very Active'),
-            value: 'very_active',
-            groupValue: activityLevel,
-            onChanged: (value) => onChanged(value!),
-          ),
+          _buildOption('Sedentary', 'Little or no exercise', 1.2),
+          _buildOption('Lightly Active', 'Light exercise 1-3 days/week', 1.375),
+          _buildOption('Moderately Active', 'Moderate exercise 3-5 days/week', 1.55),
+          _buildOption('Very Active', 'Hard exercise 6-7 days/week', 1.725),
+          _buildOption('Athletic', 'Physical job or 2x training', 1.9),
         ],
       ),
+    );
+  }
+
+  Widget _buildOption(String title, String subtitle, double value) {
+    return RadioListTile<double>(
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+      subtitle: Text(subtitle),
+      value: value,
+      groupValue: activityLevel,
+      activeColor: AppColors.primary,
+      onChanged: (val) => onChanged(val!),
     );
   }
 }
