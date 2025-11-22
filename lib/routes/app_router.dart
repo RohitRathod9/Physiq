@@ -9,9 +9,10 @@ import 'package:physiq/screens/meal_history_screen.dart';
 import 'package:physiq/screens/splash_screen.dart';
 import 'package:physiq/screens/get_started_screen.dart';
 import 'package:physiq/screens/sign_in_screen.dart';
-import 'package:physiq/screens/onboarding/onboarding_screen.dart'; // Added missing import
+import 'package:physiq/screens/onboarding/onboarding_screen.dart';
 import 'package:physiq/screens/loading_screen.dart';
 import 'package:physiq/screens/review_screen.dart';
+import 'package:physiq/screens/macro_adjustment_screen.dart'; // Import added
 import 'package:physiq/widgets/scaffold_with_nav_bar.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -59,7 +60,6 @@ final GoRouter router = GoRouter(
       path: '/sign-in',
       builder: (context, state) => const SignInScreen(),
     ),
-    // ADDED: The missing route for the onboarding screen.
     GoRoute(
       path: '/onboarding',
       builder: (context, state) => const OnboardingScreen(),
@@ -90,6 +90,11 @@ final GoRouter router = GoRouter(
           ),
         );
       },
+    ),
+    // Route for the macro adjustment screen
+    GoRoute(
+      path: '/settings/adjust-macros',
+      builder: (context, state) => const MacroAdjustmentScreen(),
     ),
   ],
 );

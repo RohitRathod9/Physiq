@@ -4,6 +4,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 /// A simple configuration class to toggle between mock and real backends.
 class AppConfig {
   static const bool useMockBackend = true;
+  static const bool mockDelete = true;
+  static const int referralReward = 100;
+  static const int referralBonusAt = 5;
 }
 
 /// A custom user class to abstract the Firebase User object from the UI.
@@ -11,8 +14,16 @@ class AuthUser {
   final String uid;
   final String? displayName;
   final String? email;
+  final double? goalWeightKg;
+  final int? birthYear;
 
-  AuthUser({required this.uid, this.displayName, this.email});
+  AuthUser({
+    required this.uid,
+    this.displayName,
+    this.email,
+    this.goalWeightKg,
+    this.birthYear,
+  });
 }
 
 /// A service to handle all authentication-related tasks, with a mock mode.
@@ -25,7 +36,13 @@ class AuthService {
   /// Returns the current user as a custom [AuthUser] object.
   AuthUser? getCurrentUser() {
     if (AppConfig.useMockBackend) {
-      return AuthUser(uid: 'mock_user_id', displayName: 'Test User', email: 'test@user.com');
+      return AuthUser(
+        uid: 'mock_user_id',
+        displayName: 'Test User',
+        email: 'test@user.com',
+        goalWeightKg: 75.0,
+        birthYear: 1995,
+      );
     }
 
     final firebaseUser = _firebaseAuth.currentUser;
@@ -125,6 +142,10 @@ class AuthService {
       uid: user.uid,
       displayName: user.displayName,
       email: user.email,
+      // In a real app, these would come from a separate Firestore fetch, 
+      // not the Auth object directly. For now, we leave them null or mock them if needed.
+      goalWeightKg: null, 
+      birthYear: null,
     );
   }
 }

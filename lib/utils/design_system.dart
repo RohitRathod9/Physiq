@@ -62,11 +62,29 @@ class AppTextStyles {
     color: AppColors.primaryText,
   );
 
-  static TextStyle? get body => null;
+  static final TextStyle body = _base(
+    weight: FontWeight.normal,
+    size: 16,
+    color: AppColors.primaryText,
+  );
 
-  static TextStyle? get bodyBold => null;
+  static final TextStyle bodyMedium = _base(
+    weight: FontWeight.w500,
+    size: 16,
+    color: AppColors.primaryText,
+  );
 
-  static get subheading => null;
+  static final TextStyle bodyBold = _base(
+    weight: FontWeight.bold,
+    size: 16,
+    color: AppColors.primaryText,
+  );
+
+  static final TextStyle subheading = _base(
+    weight: FontWeight.w500,
+    size: 16,
+    color: AppColors.secondaryText,
+  );
 }
 
 // --- RADII & SHADOWS ---
