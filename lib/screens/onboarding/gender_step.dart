@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:physiq/theme/design_system.dart';
+import 'package:physiq/utils/design_system.dart'; // CORRECTED: Use the correct design system import
 import 'widgets/choice_card.dart';
 
 class GenderStep extends StatelessWidget {
@@ -15,10 +15,11 @@ class GenderStep extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Choose your Gender', style: AppTextStyles.h1),
+          Text('Choose your Gender', style: AppTextStyles.heading1),
           const SizedBox(height: 8),
           Text(
             'This will be used to calibrate your custom plan.',
+            // CORRECTED: The 'label' text style is defined in the utils/design_system.dart file
             style: AppTextStyles.label.copyWith(fontSize: 16, color: AppColors.secondaryText),
           ),
           const SizedBox(height: 32),

@@ -38,7 +38,7 @@ class _DateSliderState extends State<DateSlider> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 55, // Reduced height
+      height: 60,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         controller: _scrollController,
@@ -56,11 +56,11 @@ class _DateSliderState extends State<DateSlider> {
               widget.onDateSelected(date);
             },
             child: Container(
-              width: 45, // Reduced width
+              width: 45,
               margin: const EdgeInsets.symmetric(horizontal: 4),
               color: Colors.transparent,
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Distributes space to fix overflow
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -71,13 +71,13 @@ class _DateSliderState extends State<DateSlider> {
                     child: Text(
                       DateFormat.E().format(date).toUpperCase(),
                       style: AppTextStyles.smallLabel.copyWith(
-                        fontSize: 10, // Smaller font
+                        fontSize: 10,
                         color: isSelected ? AppColors.accent : AppColors.secondaryText,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  // REMOVED: const SizedBox(height: 2), as it was causing the overflow.
                   _buildDateBubble(date, isSelected),
                 ],
               ),

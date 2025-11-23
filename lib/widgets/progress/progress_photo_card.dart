@@ -42,7 +42,7 @@ class ProgressPhotoCard extends StatelessWidget {
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Text('No photos yet. Track your visual progress!', style: AppTextStyles.bodyMedium),
+                child: Text('Track your visual progress!', style: AppTextStyles.bodyMedium),
               ),
             )
           else

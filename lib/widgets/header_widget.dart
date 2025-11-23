@@ -27,10 +27,9 @@ class _HeaderWidgetState extends State<HeaderWidget> {
                 onTap: _showEditNameDialog,
                 child: Row(
                   children: [
-                    const Icon(Icons.apple, size: 32, color: AppColors.primaryText), // Placeholder logo
                     const SizedBox(width: 8),
                     Text(
-                      'Cal AI', // Hardcoded to match image, but could be _userName
+                      'Hi,Rohit', // Hardcoded to match image, but could be _userName
                       style: AppTextStyles.heading1.copyWith(fontSize: 26),
                     ),
                   ],

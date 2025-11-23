@@ -10,7 +10,8 @@ class BmiCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      // 1. DECREASED SIZE: Reduced vertical padding to make the card less bulky.
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(AppRadii.card),
@@ -41,12 +42,13 @@ class BmiCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          // 2. ADJUSTED SPACING: Reduced the SizedBox height from 16 to 8.
+          const SizedBox(height: 8),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(bmi.toStringAsFixed(1), style: AppTextStyles.heading1.copyWith(fontSize: 48)),
+              Text(bmi.toStringAsFixed(1), style: AppTextStyles.heading1.copyWith(fontSize: 38)),
               const SizedBox(width: 12),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -61,7 +63,8 @@ class BmiCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          // Reduced spacing before the indicator.
+          const SizedBox(height: 16),
           _buildVisualIndicator(),
         ],
       ),
@@ -79,17 +82,42 @@ class BmiCard extends StatelessWidget {
   }
 
   Widget _buildVisualIndicator() {
+    // Helper to create the text labels
+    Widget _buildLabel(String text, int flex, Color color) {
+      return Expanded(
+        flex: flex,
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: AppTextStyles.smallLabel.copyWith(color: color, fontSize: 9),
+        ),
+      );
+    }
+
     return Column(
       children: [
+        // The colored bar
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4), // Rounded corners for the bar
+          child: Row(
+            children: [
+              Expanded(flex: 18, child: Container(height: 8, color: Colors.blue)),
+              Expanded(flex: 7, child: Container(height: 8, color: Colors.green)),
+              Expanded(flex: 5, child: Container(height: 8, color: Colors.orange)),
+              Expanded(flex: 10, child: Container(height: 8, color: Colors.red)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        // 3. ADDED LABELS: New Row with text labels below the bar.
         Row(
           children: [
-            Expanded(flex: 18, child: Container(height: 8, color: Colors.blue)),
-            Expanded(flex: 7, child: Container(height: 8, color: Colors.green)),
-            Expanded(flex: 5, child: Container(height: 8, color: Colors.orange)),
-            Expanded(flex: 10, child: Container(height: 8, color: Colors.red)),
+            _buildLabel('Underweight', 18, Colors.blue),
+            _buildLabel('Healthy', 7, Colors.green),
+            _buildLabel('Overweight', 5, Colors.orange),
+            _buildLabel('Obese', 10, Colors.red),
           ],
         ),
-        // Pointer logic could be added here, simplified for now
       ],
     );
   }

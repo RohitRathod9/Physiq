@@ -29,10 +29,11 @@ class ProgressScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text('Progress', style: AppTextStyles.heading2),
         backgroundColor: AppColors.background,
+        scrolledUnderElevation: 0, // Prevents color change on scroll
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -52,7 +53,7 @@ class ProgressScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 14),
 
             // Graph
             EcgGraphCard(
@@ -60,7 +61,7 @@ class ProgressScreen extends ConsumerWidget {
               selectedRange: state.selectedRange,
               onRangeChanged: (range) => viewModel.setRange(range),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 14),
 
             // Photos
             ProgressPhotoCard(
@@ -71,7 +72,7 @@ class ProgressScreen extends ConsumerWidget {
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Comparison viewer coming soon!')));
               },
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // BMI
             BmiCard(
