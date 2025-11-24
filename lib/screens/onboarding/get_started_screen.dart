@@ -48,7 +48,7 @@ class GetStartedScreen extends StatelessWidget {
                   },
                   child: Text(
                     'Get Started',
-                    style: AppTextStyles.button,
+                    style: AppTextStyles.button.copyWith(color: Colors.white),
                   ),
                 ),
               ),

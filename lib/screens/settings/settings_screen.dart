@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:physiq/theme/design_system.dart';
 import 'package:physiq/services/auth_service.dart';
-import 'package:physiq/services/user_repository.dart';
+// import 'package:physiq/services/user_repository.dart';
 import 'package:physiq/widgets/settings/settings_widgets.dart';
 import 'package:physiq/screens/settings/invite_friends_page.dart';
 import 'package:physiq/screens/settings/leaderboard_page.dart';
@@ -11,7 +11,11 @@ import 'package:physiq/screens/macro_adjustment_screen.dart';
 import 'package:physiq/screens/settings/legal_pages.dart';
 import 'package:physiq/screens/onboarding/get_started_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:physiq/providers/preferences_provider.dart';
+import 'package:physiq/services/support_service.dart';
+import 'package:physiq/services/cloud_functions_client.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -21,35 +25,16 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  bool _isDarkMode = false;
-  String _language = 'English';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPreferences();
-  }
-
-  Future<void> _loadPreferences() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _isDarkMode = prefs.getBool('isDarkMode') ?? false;
-      _language = prefs.getString('language') ?? 'English';
-    });
-  }
-
-  Future<void> _toggleTheme(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isDarkMode', value);
-    setState(() {
-      _isDarkMode = value;
-    });
-    // In a real app, you would update a ThemeProvider here
-    // ref.read(themeProvider.notifier).toggleTheme(value);
-  }
+  final _supportService = SupportService();
+  final _cloudFunctions = CloudFunctionsClient();
+  final _auth = FirebaseAuth.instance;
 
   @override
   Widget build(BuildContext context) {
+    final prefsState = ref.watch(preferencesProvider);
+    final isDarkMode = prefsState.themeMode == ThemeMode.dark;
+    final language = prefsState.locale.languageCode == 'hi' ? 'Hindi' : 'English';
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -57,7 +42,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        automaticallyImplyLeading: false, // Assuming this is a tab or has its own nav
+        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -105,18 +90,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   SettingsRow(
                     icon: Icons.language,
                     title: 'Language',
-                    subtitle: _language,
-                    onTap: _showLanguageDialog,
+                    subtitle: language,
+                    onTap: () => _showLanguageDialog(language),
                   ),
                   _buildDivider(),
                   SettingsRow(
-                    icon: _isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                    icon: isDarkMode ? Icons.dark_mode : Icons.light_mode,
                     title: 'Dark Mode',
                     showChevron: false,
                     trailing: Switch(
-                      value: _isDarkMode,
+                      value: isDarkMode,
                       activeColor: AppColors.primary,
-                      onChanged: _toggleTheme,
+                      onChanged: (val) {
+                        ref.read(preferencesProvider.notifier).setThemeMode(val ? ThemeMode.dark : ThemeMode.light);
+                      },
                     ),
                   ),
                 ],
@@ -175,7 +162,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             
             const SizedBox(height: 20),
-            Text('Version 1.0.0', style: AppTextStyles.smallLabel),
+            FutureBuilder<PackageInfo>(
+              future: PackageInfo.fromPlatform(),
+              builder: (context, snapshot) {
+                final version = snapshot.data?.version ?? '1.0.0';
+                return Text('Version $version', style: AppTextStyles.smallLabel);
+              },
+            ),
           ],
         ),
       ),
@@ -186,7 +179,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return const Divider(height: 1, color: Color(0xFFF3F4F6), thickness: 1);
   }
 
-  void _showLanguageDialog() {
+  void _showLanguageDialog(String currentLang) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -197,13 +190,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             return RadioListTile<String>(
               title: Text(lang),
               value: lang,
-              groupValue: _language,
+              groupValue: currentLang,
               activeColor: AppColors.primary,
               onChanged: (val) async {
                 if (val != null) {
-                  final prefs = await SharedPreferences.getInstance();
-                  await prefs.setString('language', val);
-                  setState(() => _language = val);
+                  final locale = val == 'Hindi' ? const Locale('hi') : const Locale('en');
+                  await ref.read(preferencesProvider.notifier).setLocale(locale);
                   if (mounted) Navigator.pop(context);
                 }
               },
@@ -215,17 +207,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _sendSupportEmail() async {
-    final Uri emailLaunchUri = Uri(
-      scheme: 'mailto',
-      path: 'support@example.com',
-      query: 'subject=Support Request',
-    );
-    if (await canLaunchUrl(emailLaunchUri)) {
-      await launchUrl(emailLaunchUri);
-    } else {
+    final uid = _auth.currentUser?.uid ?? 'unknown';
+    final info = await PackageInfo.fromPlatform();
+    try {
+      await _supportService.sendSupportEmail(uid, info.version);
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not launch email app')),
+          SnackBar(content: Text('Could not launch email app: $e')),
         );
       }
     }
@@ -248,11 +237,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Request submitted!')),
-              );
+            onPressed: () async {
+              final text = controller.text.trim();
+              if (text.isNotEmpty) {
+                final uid = _auth.currentUser?.uid;
+                if (uid != null) {
+                  await _supportService.submitFeatureRequest(uid, 'Feature Request', text);
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Request submitted!')),
+                    );
+                  }
+                }
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             child: const Text('Submit', style: TextStyle(color: Colors.white)),
@@ -267,7 +265,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Account'),
-        content: const Text('Are you sure you want to permanently delete all your data?'),
+        content: const Text('Are you sure you want to permanently delete all your data? This cannot be undone.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(
@@ -280,20 +278,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 builder: (context) => const Center(child: CircularProgressIndicator()),
               );
               
-              // Simulate API call
-              await Future.delayed(const Duration(seconds: 2));
-              
-              // Call actual delete API if available
-              await ref.read(userRepositoryProvider).deleteAccount();
-              
-              if (mounted) {
-                Navigator.pop(context); // Pop loading
-                // Navigate to Get Started
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const GetStartedScreen()),
-                  (route) => false,
-                );
+              try {
+                final uid = _auth.currentUser?.uid;
+                if (uid != null) {
+                  await _cloudFunctions.deleteUserData(uid);
+                  await ref.read(preferencesProvider.notifier).clear();
+                  await AuthService().signOut();
+                  
+                  if (mounted) { 
+                    Navigator.pop(context); // Pop loading
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const GetStartedScreen()),
+                      (route) => false,
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Account deleted successfully')),
+                    );
+                  }
+                }
+              } catch (e) {
+                if (mounted) {
+                  Navigator.pop(context); // Pop loading
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Error'),
+                      content: Text('Failed to delete account: $e. Please try again later.'),
+                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
+                    ),
+                  );
+                }
               }
             },
             child: const Text('Yes, Delete', style: TextStyle(color: Colors.red)),
@@ -314,6 +329,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
+              await ref.read(preferencesProvider.notifier).clear();
               await AuthService().signOut();
               if (mounted) {
                 Navigator.pushAndRemoveUntil(

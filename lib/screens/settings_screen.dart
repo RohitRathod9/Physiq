@@ -15,7 +15,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final userRepo = ref.watch(userRepositoryProvider);
     // In a real app, we'd watch a user provider. For now, fetching stream.
-    final authService = AuthService(); 
+    final authService = AuthService();
     final currentUser = authService.getCurrentUser();
 
     return Scaffold(
@@ -50,10 +50,11 @@ class SettingsScreen extends ConsumerWidget {
               _buildSectionItem(
                 icon: Icons.person_outline,
                 title: 'Personal details',
-                subtitle: 'Goal: ${currentUser?.goalWeightKg ?? "--"}kg • Age: ${currentUser?.birthYear != null ? DateTime.now().year - currentUser!.birthYear! : "--"}',
+                subtitle:
+                    'Goal: ${currentUser?.goalWeightKg ?? "--"}kg • Age: ${currentUser?.birthYear != null ? DateTime.now().year - currentUser!.birthYear! : "--"}',
                 onTap: () => _showPersonalDetails(context),
               ),
-              _buildDivider(),
+              const SizedBox(height: 32),
 
               // 3. Leaderboard
               _buildSectionItem(
@@ -61,7 +62,7 @@ class SettingsScreen extends ConsumerWidget {
                 title: 'Leaderboard',
                 onTap: () => _showLeaderboard(context),
               ),
-              _buildDivider(),
+              const SizedBox(height: 32),
 
               // 4. Adjust Macronutrients
               _buildSectionItem(
@@ -70,11 +71,13 @@ class SettingsScreen extends ConsumerWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const MacroAdjustmentScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => const MacroAdjustmentScreen(),
+                    ),
                   );
                 },
               ),
-              _buildDivider(),
+              const SizedBox(height: 32),
 
               // 5. Preferences
               _buildSectionItem(
@@ -82,45 +85,66 @@ class SettingsScreen extends ConsumerWidget {
                 title: 'Preferences',
                 onTap: () => _showPreferences(context),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 48),
 
               // 6. Legal & Support
               Text('Legal & Support', style: AppTextStyles.heading2),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               _buildSectionItem(
                 icon: Icons.description_outlined,
                 title: 'Terms of Service',
-                onTap: () => _showLegalDialog(context, 'Terms of Service', 'Terms content...'),
+                onTap: () => _showLegalDialog(
+                  context,
+                  'Terms of Service',
+                  'Terms content...',
+                ),
               ),
+              const SizedBox(height: 32),
               _buildSectionItem(
                 icon: Icons.privacy_tip_outlined,
                 title: 'Privacy Policy',
-                onTap: () => _showLegalDialog(context, 'Privacy Policy', 'Privacy content...'),
+                onTap: () => _showLegalDialog(
+                  context,
+                  'Privacy Policy',
+                  'Privacy content...',
+                ),
               ),
+              const SizedBox(height: 32),
               _buildSectionItem(
                 icon: Icons.help_outline,
                 title: 'Support',
-                onTap: () => _showLegalDialog(context, 'Support', 'Email us at support@physiq.app'),
+                onTap: () => _showLegalDialog(
+                  context,
+                  'Support',
+                  'Email us at support@physiq.app',
+                ),
               ),
+              const SizedBox(height: 32),
               _buildSectionItem(
                 icon: Icons.feedback_outlined,
                 title: 'Feature Request',
                 onTap: () => _showFeatureRequestDialog(context),
               ),
-              
-              const SizedBox(height: 32),
-              
+
+              const SizedBox(height: 48),
+
               // 7. Logout & Delete
               Center(
                 child: TextButton(
                   onPressed: () => _confirmLogout(context),
-                  child: Text('Log out', style: AppTextStyles.button.copyWith(color: Colors.red)),
+                  child: Text(
+                    'Log out',
+                    style: AppTextStyles.button.copyWith(color: Colors.red),
+                  ),
                 ),
               ),
               Center(
                 child: TextButton(
                   onPressed: () => _confirmDeleteAccount(context, ref),
-                  child: Text('Delete account', style: AppTextStyles.smallLabel.copyWith(color: Colors.red)),
+                  child: Text(
+                    'Delete account',
+                    style: AppTextStyles.smallLabel.copyWith(color: Colors.red),
+                  ),
                 ),
               ),
               const SizedBox(height: 40),
@@ -131,23 +155,27 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-
-  Widget _buildSectionItem({required IconData icon, required String title, String? subtitle, required VoidCallback onTap}) {
+  Widget _buildSectionItem({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16.0),
+        padding: const EdgeInsets.symmetric(vertical: 20.0),
         child: Row(
           children: [
             Icon(icon, size: 24, color: AppColors.primaryText),
-            const SizedBox(width: 16),
+            const SizedBox(width: 20),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: AppTextStyles.bodyMedium),
                   if (subtitle != null) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(subtitle, style: AppTextStyles.smallLabel),
                   ],
                 ],
@@ -158,10 +186,6 @@ class SettingsScreen extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  Widget _buildDivider() {
-    return const Divider(height: 1, color: Color(0xFFE5E5E5));
   }
 
   void _showPersonalDetails(BuildContext context) {
@@ -198,7 +222,10 @@ class SettingsScreen extends ConsumerWidget {
         title: Text(title),
         content: Text(content),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
         ],
       ),
     );
@@ -211,7 +238,10 @@ class SettingsScreen extends ConsumerWidget {
         title: const Text('Delete Account'),
         content: const Text('Are you sure? This action cannot be undone.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
@@ -232,7 +262,10 @@ class SettingsScreen extends ConsumerWidget {
         title: const Text('Log out'),
         content: const Text('Are you sure you want to log out?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
@@ -258,7 +291,10 @@ class SettingsScreen extends ConsumerWidget {
           maxLines: 3,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () {
               // Send request

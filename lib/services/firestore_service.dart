@@ -1,71 +1,198 @@
+// lib/services/firestore_service.dart
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
+import 'package:physiq/services/cloud_functions_client.dart';
 
 class FirestoreService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final bool useMockData = false; // Set to true to use mock data for development
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final CloudFunctionsClient _cloudFunctions = CloudFunctionsClient();
 
-  Stream<Map<String, dynamic>> streamDailySummary(String uid, DateTime date) {
-    if (useMockData) {
-      return Stream.value({
-        'caloriesLeft': 1434,
-        'caloriesEaten': 666,
-        'caloriesBurned': 108,
-        'proteinLeft': 110,
-        'carbsLeft': 160,
-        'fatsLeft': 40,
-        'waterLeft': 1400,
-        'stepsLeft': 4000,
-        'macroTarget': {'calories': 2800, 'proteinG': 106, 'fatsG': 78, 'carbsG': 418},
-        'streakStatus': 'green'
-      });
+  FirestoreService();
+
+  // ----------------------------
+  // Update User Profile (Personal Details)
+  // ----------------------------
+  Future<void> updateUserProfile(String uid, Map<String, dynamic> updates) async {
+    try {
+      // 1. Log the change
+      await _logSettingsChange(uid, updates);
+
+      // 2. Update Firestore (merge)
+      await _firestore.collection('users').doc(uid).set(updates, SetOptions(merge: true));
+
+      // 3. Fetch the latest profile and trigger canonical plan generation
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      if (userDoc.exists) {
+        try {
+          await _cloudFunctions.generateCanonicalPlan(
+            uid: uid,
+            profile: userDoc.data()!,
+            clientPlanVersion: 1,
+          );
+        } catch (e) {
+          // non-blocking: log and continue
+          print('Error generating plan (cloud function): $e');
+        }
+      }
+    } catch (e) {
+      print('updateUserProfile error: $e');
+      rethrow;
     }
-    final path = 'users/$uid/daily/${DateFormat('yyyy-MM-dd').format(date)}';
-    return _db.doc(path).snapshots().map((snapshot) => snapshot.data() ?? {});
   }
 
-  Future<List<Map<String, dynamic>>> fetchRecentMeals(String uid, {int limit = 3}) {
-    if (useMockData) {
-      return Future.value([
-        {
-          'id': 'mock_meal_1',
-          'name': 'Mock Meal 1',
-          'calories': 350,
-          'timestamp': Timestamp.now(),
-          'thumbnailUrl': 'https://via.placeholder.com/150'
-        },
-         {
-          'id': 'mock_meal_2',
-          'name': 'Mock Meal 2',
-          'calories': 450,
-          'timestamp': Timestamp.now(),
-          'thumbnailUrl': 'https://via.placeholder.com/150'
-        },
-      ]);
+  // ----------------------------
+  // Update Macros
+  // ----------------------------
+  Future<void> updateMacros(String uid, Map<String, dynamic> macros) async {
+    try {
+      final data = {
+        ...macros,
+        'lastUpdatedAt': FieldValue.serverTimestamp(),
+      };
+
+      await _logSettingsChange(uid, {'macros': macros});
+
+      // Save to a subcollection document users/{uid}/macros/current
+      await _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('macros')
+          .doc('current')
+          .set(data, SetOptions(merge: true));
+    } catch (e) {
+      print('updateMacros error: $e');
+      rethrow;
     }
-    return _db
-        .collection('users/$uid/meals')
-        .orderBy('timestamp', descending: true)
-        .limit(limit)
-        .get()
-        .then((snapshot) => snapshot.docs.map((doc) {
-              final data = doc.data();
-              data['id'] = doc.id; // Add document ID to the map
-              return data;
-            }).toList());
   }
 
-  Future<Map<DateTime, String>> fetchMonthStatus(String uid, int year, int month) {
-    if (useMockData) {
-      return Future.value({
-        DateTime(year, month, 1): 'green',
-        DateTime(year, month, 2): 'yellow',
-        DateTime(year, month, 3): 'red',
-      });
+  // ----------------------------
+  // Stream Daily Summary
+  // - Tries to listen to users/{uid}/daily_summaries/{yyyy-MM-dd} (if you store summaries)
+  // - If summary doc does not exist, computes summary from meals subcollection for that day
+  // ----------------------------
+  Stream<Map<String, dynamic>> streamDailySummary(String uid, DateTime date) async* {
+    final dateId = _formatDateId(date);
+    final summaryDocRef =
+        _firestore.collection('users').doc(uid).collection('daily_summaries').doc(dateId);
+
+    // Listen to changes on the summary doc; if it exists yield it.
+    // If it doesn't exist, compute summary from meals and yield that.
+    await for (final snap in summaryDocRef.snapshots()) {
+      try {
+        if (snap.exists && snap.data() != null) {
+          yield Map<String, dynamic>.from(snap.data()!);
+        } else {
+          // compute summary from meals for the given day
+          final start = DateTime(date.year, date.month, date.day);
+          final end = start.add(const Duration(days: 1));
+
+          final mealsSnap = await _firestore
+              .collection('users')
+              .doc(uid)
+              .collection('meals')
+              .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+              .where('timestamp', isLessThan: Timestamp.fromDate(end))
+              .get();
+
+          // aggregate fields (defensive: handle missing fields)
+          int calories = 0;
+          int protein = 0;
+          int carbs = 0;
+          int fat = 0;
+
+          for (final doc in mealsSnap.docs) {
+            final data = doc.data();
+            calories += _toIntSafe(data['calories']);
+            protein += _toIntSafe(data['protein']);
+            carbs += _toIntSafe(data['carbs']);
+            fat += _toIntSafe(data['fat']);
+          }
+
+          yield {
+            'date': dateId,
+            'calories': calories,
+            'protein': protein,
+            'carbs': carbs,
+            'fat': fat,
+            'computedFromMeals': true,
+          };
+        }
+      } catch (e) {
+        print('streamDailySummary error: $e');
+        // yield a safe default so listeners won't crash
+        yield {
+          'date': dateId,
+          'calories': 0,
+          'protein': 0,
+          'carbs': 0,
+          'fat': 0,
+          'error': e.toString(),
+        };
+      }
     }
-    // This implementation is more complex and would require fetching all documents for the month.
-    // For now, returning an empty map.
-    // A real implementation would query the 'daily' subcollection for the given month.
-    return Future.value({});
+  }
+
+  // ----------------------------
+  // Fetch Recent Meals
+  // - Returns latest N meals from users/{uid}/meals ordered by timestamp desc
+  // ----------------------------
+  Future<List<Map<String, dynamic>>> fetchRecentMeals(String uid, {int limit = 10}) async {
+    try {
+      final snap = await _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('meals')
+          .orderBy('timestamp', descending: true)
+          .limit(limit)
+          .get();
+
+      return snap.docs.map((d) {
+        final m = Map<String, dynamic>.from(d.data());
+        m['id'] = d.id;
+        return m;
+      }).toList();
+    } catch (e) {
+      print('fetchRecentMeals error: $e');
+      return <Map<String, dynamic>>[];
+    }
+  }
+
+  // ----------------------------
+  // Audit Log helper
+  // ----------------------------
+  Future<void> _logSettingsChange(String uid, Map<String, dynamic> changes) async {
+    try {
+      await _firestore
+          .collection('logs')
+          .doc('settingsChanges')
+          .collection(uid)
+          .add({
+        'changes': changes,
+        'changedAt': FieldValue.serverTimestamp(),
+        'source': 'mobile',
+        'changedByUid': uid,
+      });
+    } catch (e) {
+      print('Failed to log setting change: $e');
+    }
+  }
+
+  // ----------------------------
+  // Helpers
+  // ----------------------------
+  static String _formatDateId(DateTime d) {
+    final y = d.year.toString().padLeft(4, '0');
+    final m = d.month.toString().padLeft(2, '0');
+    final day = d.day.toString().padLeft(2, '0');
+    return '$y-$m-$day';
+  }
+
+  static int _toIntSafe(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
   }
 }

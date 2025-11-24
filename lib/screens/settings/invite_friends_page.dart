@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:physiq/theme/design_system.dart';
-import 'package:physiq/services/promo_code_service.dart';
+import 'package:physiq/services/promo_service.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class InviteFriendsPage extends StatefulWidget {
   const InviteFriendsPage({super.key});
@@ -13,6 +14,8 @@ class InviteFriendsPage extends StatefulWidget {
 
 class _InviteFriendsPageState extends State<InviteFriendsPage> {
   String _promoCode = 'LOADING';
+  final _promoService = PromoService();
+  final _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
@@ -21,10 +24,23 @@ class _InviteFriendsPageState extends State<InviteFriendsPage> {
   }
 
   Future<void> _loadPromoCode() async {
-    final code = await PromoCodeService().getOrGeneratePromoCode();
-    setState(() {
-      _promoCode = code;
-    });
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return;
+    
+    try {
+      final code = await _promoService.ensurePromoCode(uid);
+      if (mounted) {
+        setState(() {
+          _promoCode = code;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading code: $e')),
+        );
+      }
+    }
   }
 
   void _copyCode() {
@@ -35,7 +51,11 @@ class _InviteFriendsPageState extends State<InviteFriendsPage> {
   }
 
   void _shareCode() {
-    Share.share('Join me on Physiq! Use my code $_promoCode to earn rewards.');
+    final uid = _auth.currentUser?.uid;
+    if (uid != null) {
+      _promoService.logInviteShare(uid, _promoCode);
+    }
+    Share.share('Join me on Physiq! Use my code $_promoCode to earn rewards. Download here: https://physiq.app/invite/$_promoCode');
   }
 
   @override
@@ -97,7 +117,7 @@ class _InviteFriendsPageState extends State<InviteFriendsPage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _shareCode,
+                onPressed: _promoCode == 'LOADING' ? null : _shareCode,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),

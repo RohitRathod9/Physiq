@@ -1,16 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:physiq/theme/design_system.dart';
+import 'package:physiq/services/firestore_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // --- Edit Goal Weight ---
 class EditGoalWeightPage extends StatefulWidget {
-  const EditGoalWeightPage({super.key});
+  final double initialValue;
+  const EditGoalWeightPage({super.key, this.initialValue = 70.0});
 
   @override
   State<EditGoalWeightPage> createState() => _EditGoalWeightPageState();
 }
 
 class _EditGoalWeightPageState extends State<EditGoalWeightPage> {
-  double _currentValue = 70.0;
+  late double _currentValue;
+  final _firestoreService = FirestoreService();
+
+  @override
+  void initState() {
+    super.initState();
+    _currentValue = widget.initialValue;
+  }
+
+  Future<void> _save() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      await _firestoreService.updateUserProfile(uid, {'goalWeightKg': _currentValue});
+      if (mounted) Navigator.pop(context);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +59,7 @@ class _EditGoalWeightPageState extends State<EditGoalWeightPage> {
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: _save,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -58,8 +76,37 @@ class _EditGoalWeightPageState extends State<EditGoalWeightPage> {
 }
 
 // --- Edit Height & Weight ---
-class EditHeightWeightPage extends StatelessWidget {
-  const EditHeightWeightPage({super.key});
+class EditHeightWeightPage extends StatefulWidget {
+  final double initialHeight;
+  final double initialWeight;
+  const EditHeightWeightPage({super.key, this.initialHeight = 175, this.initialWeight = 70});
+
+  @override
+  State<EditHeightWeightPage> createState() => _EditHeightWeightPageState();
+}
+
+class _EditHeightWeightPageState extends State<EditHeightWeightPage> {
+  late TextEditingController _heightController;
+  late TextEditingController _weightController;
+  final _firestoreService = FirestoreService();
+
+  @override
+  void initState() {
+    super.initState();
+    _heightController = TextEditingController(text: widget.initialHeight.toString());
+    _weightController = TextEditingController(text: widget.initialWeight.toString());
+  }
+
+  Future<void> _save() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      await _firestoreService.updateUserProfile(uid, {
+        'heightCm': double.tryParse(_heightController.text) ?? widget.initialHeight,
+        'weightKg': double.tryParse(_weightController.text) ?? widget.initialWeight,
+      });
+      if (mounted) Navigator.pop(context);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,15 +118,67 @@ class EditHeightWeightPage extends StatelessWidget {
         elevation: 0,
         leading: const BackButton(color: AppColors.primaryText),
       ),
-      body: Center(child: Text('Height & Weight Picker UI Placeholder', style: AppTextStyles.bodyMedium)),
-      // Implement actual pickers here similar to onboarding
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _heightController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Height (cm)'),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _weightController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Weight (kg)'),
+            ),
+            const Spacer(),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                ),
+                child: Text('Save', style: AppTextStyles.button.copyWith(color: Colors.white)),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
 
 // --- Edit Birth Year ---
-class EditBirthYearPage extends StatelessWidget {
-  const EditBirthYearPage({super.key});
+class EditBirthYearPage extends StatefulWidget {
+  final int initialYear;
+  const EditBirthYearPage({super.key, this.initialYear = 1995});
+
+  @override
+  State<EditBirthYearPage> createState() => _EditBirthYearPageState();
+}
+
+class _EditBirthYearPageState extends State<EditBirthYearPage> {
+  late int _selectedYear;
+  final _firestoreService = FirestoreService();
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedYear = widget.initialYear;
+  }
+
+  Future<void> _save() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      await _firestoreService.updateUserProfile(uid, {'birthYear': _selectedYear});
+      if (mounted) Navigator.pop(context);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,21 +190,81 @@ class EditBirthYearPage extends StatelessWidget {
         elevation: 0,
         leading: const BackButton(color: AppColors.primaryText),
       ),
-      body: Center(child: Text('Year Picker UI Placeholder', style: AppTextStyles.bodyMedium)),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListWheelScrollView.useDelegate(
+              itemExtent: 50,
+              physics: const FixedExtentScrollPhysics(),
+              controller: FixedExtentScrollController(initialItem: _selectedYear - 1900),
+              onSelectedItemChanged: (index) {
+                setState(() {
+                  _selectedYear = 1900 + index;
+                });
+              },
+              childDelegate: ListWheelChildBuilderDelegate(
+                builder: (context, index) {
+                  final year = 1900 + index;
+                  return Center(
+                    child: Text(
+                      '$year',
+                      style: year == _selectedYear
+                          ? AppTextStyles.heading2.copyWith(color: AppColors.primary)
+                          : AppTextStyles.bodyMedium.copyWith(color: Colors.grey),
+                    ),
+                  );
+                },
+                childCount: 150,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                ),
+                child: Text('Save', style: AppTextStyles.button.copyWith(color: Colors.white)),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 // --- Edit Gender ---
 class EditGenderPage extends StatefulWidget {
-  const EditGenderPage({super.key});
+  final String initialGender;
+  const EditGenderPage({super.key, this.initialGender = 'Male'});
 
   @override
   State<EditGenderPage> createState() => _EditGenderPageState();
 }
 
 class _EditGenderPageState extends State<EditGenderPage> {
-  String _selected = 'Male';
+  late String _selected;
+  final _firestoreService = FirestoreService();
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.initialGender;
+  }
+
+  Future<void> _save() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      await _firestoreService.updateUserProfile(uid, {'gender': _selected});
+      if (mounted) Navigator.pop(context);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -155,7 +314,7 @@ class _EditGenderPageState extends State<EditGenderPage> {
         child: SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: _save,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               padding: const EdgeInsets.symmetric(vertical: 16),

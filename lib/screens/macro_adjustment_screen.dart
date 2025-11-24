@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:physiq/theme/design_system.dart';
-import 'package:physiq/services/user_repository.dart';
+import 'package:physiq/services/firestore_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class MacroAdjustmentScreen extends ConsumerStatefulWidget {
   const MacroAdjustmentScreen({super.key});
@@ -18,6 +19,18 @@ class _MacroAdjustmentScreenState extends ConsumerState<MacroAdjustmentScreen> {
   final _fiberController = TextEditingController(text: '30');
   final _sugarController = TextEditingController(text: '40');
   final _sodiumController = TextEditingController(text: '2300');
+  final _firestoreService = FirestoreService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentMacros();
+  }
+
+  Future<void> _loadCurrentMacros() async {
+    // In a real app, load from Firestore or Provider
+    // For now, we keep defaults or load if available
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -130,10 +143,25 @@ class _MacroAdjustmentScreenState extends ConsumerState<MacroAdjustmentScreen> {
     );
   }
 
-  void _save() {
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Nutrition goals saved!')),
-    );
+  Future<void> _save() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      await _firestoreService.updateMacros(uid, {
+        'calories': int.tryParse(_caloriesController.text) ?? 2000,
+        'protein_g': int.tryParse(_proteinController.text) ?? 150,
+        'carbs_g': int.tryParse(_carbsController.text) ?? 200,
+        'fat_g': int.tryParse(_fatsController.text) ?? 65,
+        'fiber_g': int.tryParse(_fiberController.text) ?? 30,
+        'sugar_g': int.tryParse(_sugarController.text) ?? 40,
+        'sodium_mg': int.tryParse(_sodiumController.text) ?? 2300,
+      });
+      
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nutrition goals saved!')),
+        );
+      }
+    }
   }
 }

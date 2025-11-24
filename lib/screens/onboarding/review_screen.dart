@@ -21,9 +21,15 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
     super.initState();
     final plan = ref.read(onboardingProvider).calculatedPlan;
     // Safely handle null values by defaulting to '0'
-    _proteinController = TextEditingController(text: (plan?['proteinG'] ?? 0).toString());
-    _fatController = TextEditingController(text: (plan?['fatG'] ?? 0).toString());
-    _carbsController = TextEditingController(text: (plan?['carbsG'] ?? 0).toString());
+    _proteinController = TextEditingController(
+      text: (plan?['proteinG'] ?? 0).toString(),
+    );
+    _fatController = TextEditingController(
+      text: (plan?['fatG'] ?? 0).toString(),
+    );
+    _carbsController = TextEditingController(
+      text: (plan?['carbsG'] ?? 0).toString(),
+    );
   }
 
   void _recalc() {
@@ -32,12 +38,10 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
     final c = int.tryParse(_carbsController.text) ?? 0;
 
     // Update state
-    ref.read(onboardingProvider.notifier).updateMacroSplit(
-      proteinG: p,
-      fatG: f,
-      carbsG: c,
-    );
-    
+    ref
+        .read(onboardingProvider.notifier)
+        .updateMacroSplit(proteinG: p, fatG: f, carbsG: c);
+
     setState(() {});
   }
 
@@ -88,14 +92,17 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                   const SizedBox(height: 8),
                   Text(
                     '$totalCal',
-                    style: AppTextStyles.h1.copyWith(fontSize: 48, color: AppColors.primary),
+                    style: AppTextStyles.h1.copyWith(
+                      fontSize: 48,
+                      color: AppColors.primary,
+                    ),
                   ),
                   const Text('kcal', style: TextStyle(color: Colors.grey)),
                 ],
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Macros
             _buildMacroRow('Protein', _proteinController, Colors.redAccent),
             const SizedBox(height: 16),
@@ -117,7 +124,10 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                 onPressed: () {
                   context.go('/paywall');
                 },
-                child: Text('Save & Continue', style: AppTextStyles.button),
+                child: Text(
+                  'Save & Continue',
+                  style: AppTextStyles.button.copyWith(color: Colors.white),
+                ),
               ),
             ),
           ],
@@ -126,7 +136,11 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
     );
   }
 
-  Widget _buildMacroRow(String label, TextEditingController controller, Color color) {
+  Widget _buildMacroRow(
+    String label,
+    TextEditingController controller,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(

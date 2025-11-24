@@ -23,7 +23,10 @@ class PaywallScreen extends StatelessWidget {
                       // Skip logic -> Go to Home
                       context.go('/home');
                     },
-                    child: const Text('Skip', style: TextStyle(color: Colors.grey)),
+                    child: const Text(
+                      'Skip',
+                      style: TextStyle(color: Colors.grey),
+                    ),
                   ),
                 ],
               ),
@@ -34,9 +37,9 @@ class PaywallScreen extends StatelessWidget {
               _buildFeatureItem('Voice Log Entry'),
               _buildFeatureItem('Priority Processing'),
               _buildFeatureItem('Leaderboards'),
-              
+
               const Spacer(),
-              
+
               // Mock Subscription Options
               Container(
                 padding: const EdgeInsets.all(16),
@@ -47,22 +50,39 @@ class PaywallScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Radio(value: true, groupValue: true, onChanged: (_) {}, activeColor: AppColors.primary),
+                    Radio(
+                      value: true,
+                      groupValue: true,
+                      onChanged: (_) {},
+                      activeColor: AppColors.primary,
+                    ),
                     const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Yearly Plan', style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text('\$250.00 / year', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        Text(
+                          'Yearly Plan',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          '\$250.00 / year',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
                       ],
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black,
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: const Text('BEST VALUE', style: TextStyle(color: Colors.white, fontSize: 10)),
+                      child: const Text(
+                        'BEST VALUE',
+                        style: TextStyle(color: Colors.white, fontSize: 10),
+                      ),
                     ),
                   ],
                 ),
@@ -81,8 +101,14 @@ class PaywallScreen extends StatelessWidget {
                     const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Monthly Plan', style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text('\$990.00 / month', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        Text(
+                          'Monthly Plan',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          '\$990.00 / month',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
                       ],
                     ),
                   ],
@@ -103,7 +129,10 @@ class PaywallScreen extends StatelessWidget {
                     // Mock Purchase -> Go to Home
                     context.go('/home');
                   },
-                  child: Text('Start My Journey', style: AppTextStyles.button),
+                  child: Text(
+                    'Start My Journey',
+                    style: AppTextStyles.button.copyWith(color: Colors.white),
+                  ),
                 ),
               ),
             ],

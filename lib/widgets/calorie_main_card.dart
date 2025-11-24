@@ -10,7 +10,8 @@ class CalorieMainCard extends StatefulWidget {
   State<CalorieMainCard> createState() => _CalorieMainCardState();
 }
 
-class _CalorieMainCardState extends State<CalorieMainCard> with SingleTickerProviderStateMixin {
+class _CalorieMainCardState extends State<CalorieMainCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _progressAnimation;
 
@@ -22,10 +23,13 @@ class _CalorieMainCardState extends State<CalorieMainCard> with SingleTickerProv
       duration: const Duration(milliseconds: 800),
     );
 
-    final double caloriesEaten = (widget.dailySummary['caloriesEaten'] ?? 0).toDouble();
+    final double caloriesEaten = (widget.dailySummary['caloriesEaten'] ?? 0)
+        .toDouble();
     final double calorieTarget =
         (widget.dailySummary['macroTarget']?['calories'] ?? 2800).toDouble();
-    final double endProgress = calorieTarget > 0 ? caloriesEaten / calorieTarget : 0;
+    final double endProgress = calorieTarget > 0
+        ? caloriesEaten / calorieTarget
+        : 0;
 
     _progressAnimation = Tween<double>(begin: 0, end: endProgress).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
@@ -69,7 +73,7 @@ class _CalorieMainCardState extends State<CalorieMainCard> with SingleTickerProv
                   const SizedBox(width: 16),
                   Text('108 burned', style: AppTextStyles.label),
                 ],
-              )
+              ),
             ],
           ),
           SizedBox(
@@ -85,7 +89,9 @@ class _CalorieMainCardState extends State<CalorieMainCard> with SingleTickerProv
                       value: _progressAnimation.value,
                       strokeWidth: 8,
                       backgroundColor: AppColors.background,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.accent,
+                      ),
                     ),
                     const Center(
                       child: Icon(

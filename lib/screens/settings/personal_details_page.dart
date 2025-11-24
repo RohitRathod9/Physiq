@@ -4,20 +4,16 @@ import 'package:physiq/theme/design_system.dart';
 import 'package:physiq/services/user_repository.dart';
 import 'package:physiq/widgets/settings/settings_widgets.dart';
 import 'package:physiq/screens/settings/edit_personal_details_pages.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class PersonalDetailsPage extends ConsumerWidget {
   const PersonalDetailsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userRepo = ref.watch(userRepositoryProvider);
-    // In a real app, use a stream or FutureProvider for user data
-    // For now, we'll assume we can get the current user or show loading
-    // This is a placeholder for the actual data fetching logic
-    
-    // Mocking user data for display if repo is not fully wired for synchronous access
-    // In production, use ref.watch(userProvider)
-    
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final userAsync = ref.watch(userStreamProvider(uid ?? ''));
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -26,42 +22,49 @@ class PersonalDetailsPage extends ConsumerWidget {
         elevation: 0,
         leading: const BackButton(color: AppColors.primaryText),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            _buildDetailCard(
-              context,
-              title: 'Goal Weight',
-              value: '70 kg', // Replace with dynamic data
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditGoalWeightPage())),
+      body: userAsync.when(
+        data: (user) {
+          if (user == null) return const Center(child: Text('User not found'));
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                _buildDetailCard(
+                  context,
+                  title: 'Goal Weight',
+                  value: '${user.goalWeightKg} kg',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EditGoalWeightPage(initialValue: user.goalWeightKg.toDouble()))),
+                ),
+                _buildDetailCard(
+                  context,
+                  title: 'Current Weight',
+                  value: '${user.weightKg} kg',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EditHeightWeightPage(initialHeight: user.heightCm.toDouble(), initialWeight: user.weightKg.toDouble()))),
+                ),
+                _buildDetailCard(
+                  context,
+                  title: 'Height',
+                  value: '${user.heightCm} cm',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EditHeightWeightPage(initialHeight: user.heightCm.toDouble(), initialWeight: user.weightKg.toDouble()))),
+                ),
+                _buildDetailCard(
+                  context,
+                  title: 'Birth Year',
+                  value: '${user.birthYear}',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EditBirthYearPage(initialYear: user.birthYear))),
+                ),
+                _buildDetailCard(
+                  context,
+                  title: 'Gender',
+                  value: user.gender,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EditGenderPage(initialGender: user.gender))),
+                ),
+              ],
             ),
-            _buildDetailCard(
-              context,
-              title: 'Current Weight',
-              value: '75 kg', // Replace with dynamic data
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditHeightWeightPage())),
-            ),
-            _buildDetailCard(
-              context,
-              title: 'Height',
-              value: '180 cm', // Replace with dynamic data
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditHeightWeightPage())),
-            ),
-            _buildDetailCard(
-              context,
-              title: 'Birth Year',
-              value: '1995', // Replace with dynamic data
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditBirthYearPage())),
-            ),
-            _buildDetailCard(
-              context,
-              title: 'Gender',
-              value: 'Male', // Replace with dynamic data
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditGenderPage())),
-            ),
-          ],
-        ),
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err')),
       ),
     );
   }
@@ -109,3 +112,8 @@ class PersonalDetailsPage extends ConsumerWidget {
     );
   }
 }
+
+final userStreamProvider = StreamProvider.family<dynamic, String>((ref, uid) {
+  if (uid.isEmpty) return Stream.value(null);
+  return ref.read(userRepositoryProvider).streamUser(uid);
+});

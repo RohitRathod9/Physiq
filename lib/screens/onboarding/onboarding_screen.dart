@@ -55,7 +55,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return null;
   }
 
-    int? _toInt(dynamic value) {
+  int? _toInt(dynamic value) {
     if (value == null) return null;
     if (value is int) return value;
     if (value is double) return value.round();
@@ -71,7 +71,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _onNext() {
     if (_currentStep < _stepCount - 1) {
       _saveDraft();
-      _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     } else {
       _onComplete();
     }
@@ -79,7 +82,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _onBack() {
     if (_currentStep > 0) {
-      _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     } else {
       context.go('/sign-in');
     }
@@ -100,9 +106,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _buildStep(int index) {
     switch (index) {
       case 0:
-        return GenderStep(gender: _draft['gender'], onChanged: (v) => _updateDraft('gender', v));
+        return GenderStep(
+          gender: _draft['gender'],
+          onChanged: (v) => _updateDraft('gender', v),
+        );
       case 1:
-        return BirthYearStep(birthYear: _toInt(_draft['birthYear']), onChanged: (v) => _updateDraft('birthYear', v));
+        return BirthYearStep(
+          birthYear: _toInt(_draft['birthYear']),
+          onChanged: (v) => _updateDraft('birthYear', v),
+        );
       case 2:
         return HeightWeightStep(
           height: _toDouble(_draft['height']), // FIXED: Use safe converter
@@ -115,18 +127,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           onUnitChanged: (val) => setState(() => _isMetric = val),
         );
       case 3:
-        return ActivityStep(activityLevel: _draft['activityLevel'], onChanged: (v) => _updateDraft('activityLevel', v));
+        return ActivityStep(
+          activityLevel: _draft['activityLevel'],
+          onChanged: (v) => _updateDraft('activityLevel', v),
+        );
       case 4:
-        return GoalStep(goal: _draft['goal'], onChanged: (v) => _updateDraft('goal', v));
+        return GoalStep(
+          goal: _draft['goal'],
+          onChanged: (v) => _updateDraft('goal', v),
+        );
       case 5:
         return TargetWeightStep(
-          targetWeight: _toDouble(_draft['targetWeight']), // FIXED: Use safe converter
+          targetWeight: _toDouble(
+            _draft['targetWeight'],
+          ), // FIXED: Use safe converter
           isMetric: _isMetric, // FIXED: Pass down the isMetric state
           onChanged: (v) => _updateDraft('targetWeight', v),
           onUnitChanged: (val) => setState(() => _isMetric = val),
         );
       case 6:
-        return TimeframeStep(timeframe: _draft['timeframe'], onChanged: (v) => _updateDraft('timeframe', v));
+        return TimeframeStep(
+          timeframe: _draft['timeframe'],
+          onChanged: (v) => _updateDraft('timeframe', v),
+        );
       default:
         return const SizedBox.shrink();
     }
@@ -147,7 +170,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppColors.card,
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                  ),
+                ],
               ),
               child: const Icon(Icons.arrow_back, color: AppColors.primaryText),
             ),
@@ -167,16 +195,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         onPageChanged: (index) => setState(() => _currentStep = index),
         itemBuilder: (context, index) => _buildStep(index),
       ),
-       bottomNavigationBar: Padding(
+      bottomNavigationBar: Padding(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.accent,
             padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
+            ),
           ),
           onPressed: _onNext,
-          child: Text('Continue', style: AppTextStyles.button),
+          child: Text(
+            'Continue',
+            style: AppTextStyles.button.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
     );
