@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:physiq/theme/design_system.dart';
+import 'dart:math';
 
 class HeightWeightStep extends StatefulWidget {
   final double? height;
@@ -27,11 +28,23 @@ class _HeightWeightStepState extends State<HeightWeightStep> {
   late FixedExtentScrollController _weightController;
 
   // Ranges
-  final List<int> _cmValues = List.generate(151, (index) => 100 + index); // 100-250
-  final List<int> _inValues = List.generate(61, (index) => 36 + index); // 36-96 (3'0" - 8'0")
-  
-  final List<int> _kgValues = List.generate(171, (index) => 30 + index); // 30-200
-  final List<int> _lbsValues = List.generate(391, (index) => 60 + index); // 60-450
+  final List<int> _cmValues = List.generate(151, (index) => 100 + index); // 100-250 cm
+  final List<int> _inValues = List.generate(61, (index) => 36 + index);  // 36-96 inches (3'0" - 8'0")
+
+  final List<int> _kgValues = List.generate(171, (index) => 30 + index); // 30-200 kg
+  final List<int> _lbsValues = List.generate(391, (index) => 60 + index); // 60-450 lbs
+
+  // Conversion factors
+  static const double _cmToIn = 0.393701;
+  static const double _inToCm = 2.54;
+  static const double _kgToLbs = 2.20462;
+  static const double _lbsToKg = 0.453592;
+
+  // Default values
+  static const double _defaultCm = 165;
+  static const double _defaultIn = 65; // 5'5"
+  static const double _defaultKg = 60;
+  static const double _defaultLbs = 132;
 
   @override
   void initState() {
@@ -41,42 +54,60 @@ class _HeightWeightStepState extends State<HeightWeightStep> {
 
   void _initControllers() {
     // Height
-    int heightIndex = 0;
-    if (widget.height != null) {
-      if (widget.isMetric) {
-        heightIndex = _cmValues.indexOf(widget.height!.round());
-      } else {
-        heightIndex = _inValues.indexOf(widget.height!.round());
-      }
-    }
-    if (heightIndex == -1) heightIndex = widget.isMetric ? 70 : 30; // Default ~170cm or ~5'6"
+    int heightIndex = _getInitialIndex(
+      isMetric: widget.isMetric,
+      metricValue: widget.height,
+      imperialValue: widget.height,
+      metricList: _cmValues,
+      imperialList: _inValues,
+      defaultMetric: _defaultCm,
+      defaultImperial: _defaultIn,
+    );
     _heightController = FixedExtentScrollController(initialItem: heightIndex);
 
     // Weight
-    int weightIndex = 0;
-    if (widget.weight != null) {
-      if (widget.isMetric) {
-        weightIndex = _kgValues.indexOf(widget.weight!.round());
-      } else {
-        weightIndex = _lbsValues.indexOf(widget.weight!.round());
-      }
-    }
-    if (weightIndex == -1) weightIndex = widget.isMetric ? 40 : 100; // Default ~70kg or ~160lbs
+    int weightIndex = _getInitialIndex(
+      isMetric: widget.isMetric,
+      metricValue: widget.weight,
+      imperialValue: widget.weight,
+      metricList: _kgValues,
+      imperialList: _lbsValues,
+      defaultMetric: _defaultKg,
+      defaultImperial: _defaultLbs,
+    );
     _weightController = FixedExtentScrollController(initialItem: weightIndex);
+  }
+
+  int _getInitialIndex({
+    required bool isMetric,
+    double? metricValue,
+    double? imperialValue,
+    required List<int> metricList,
+    required List<int> imperialList,
+    required double defaultMetric,
+    required double defaultImperial,
+  }) {
+    double? value = isMetric ? metricValue : imperialValue;
+    List<int> list = isMetric ? metricList : imperialList;
+    double defaultValue = isMetric ? defaultMetric : defaultImperial;
+
+    int index = -1;
+    if (value != null) {
+      index = list.indexOf(value.round());
+    }
+
+    if (index == -1) {
+      index = list.indexOf(defaultValue.round());
+    }
+
+    return max(0, index); // Ensure index is not negative
   }
 
   @override
   void didUpdateWidget(HeightWeightStep oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.isMetric != widget.isMetric) {
-      // Unit changed, we need to convert values or just reset to defaults?
-      // Ideally convert.
-      // But for simplicity in this picker, we might just re-init controllers to nearest value.
-      // Since parent holds state, we rely on parent passing converted values?
-      // The parent onboarding screen stores raw values. It doesn't seem to convert them when toggling isMetric in the code I saw.
-      // Wait, OnboardingScreen just stores 'height' and 'weight'.
-      // If I toggle unit, I should probably convert the stored value.
-      // For now, I'll just re-init controllers.
+      // Unit changed, re-initialize controllers to reflect converted values
       _initControllers();
     }
   }
@@ -89,24 +120,66 @@ class _HeightWeightStepState extends State<HeightWeightStep> {
   }
 
   void _onHeightChanged(int index) {
-    double val;
+    double currentHeight;
+    double currentWeight = widget.weight ?? (widget.isMetric ? _defaultKg : _defaultLbs);
+
     if (widget.isMetric) {
-      val = _cmValues[index].toDouble();
+      currentHeight = _cmValues[index].toDouble();
     } else {
-      val = _inValues[index].toDouble();
+      currentHeight = _inValues[index].toDouble();
     }
-    widget.onChanged(val, widget.weight ?? (widget.isMetric ? 70 : 160));
+
+    // Pass both metric and imperial original values to parent
+    double heightToStore = widget.isMetric ? currentHeight : currentHeight * _inToCm;
+    double weightToStore = widget.isMetric ? currentWeight : currentWeight * _lbsToKg;
+
+    widget.onChanged(heightToStore, weightToStore);
   }
 
   void _onWeightChanged(int index) {
-    double val;
+    double currentWeight;
+    double currentHeight = widget.height ?? (widget.isMetric ? _defaultCm : _defaultIn);
+
     if (widget.isMetric) {
-      val = _kgValues[index].toDouble();
+      currentWeight = _kgValues[index].toDouble();
     } else {
-      val = _lbsValues[index].toDouble();
+      currentWeight = _lbsValues[index].toDouble();
     }
-    widget.onChanged(widget.height ?? (widget.isMetric ? 170 : 66), val);
+
+    // Pass both metric and imperial original values to parent
+    double heightToStore = widget.isMetric ? currentHeight : currentHeight * _inToCm;
+    double weightToStore = widget.isMetric ? currentWeight : currentWeight * _lbsToKg;
+
+    widget.onChanged(heightToStore, weightToStore);
   }
+
+  void _handleUnitChange(bool isNowMetric) {
+    if (widget.onUnitChanged == null) return;
+
+    // Get current raw values from the pickers
+    double currentHeight = widget.isMetric
+        ? _cmValues[_heightController.selectedItem].toDouble()
+        : _inValues[_heightController.selectedItem].toDouble();
+
+    double currentWeight = widget.isMetric
+        ? _kgValues[_weightController.selectedItem].toDouble()
+        : _lbsValues[_weightController.selectedItem].toDouble();
+
+    double heightInCm, weightInKg;
+
+    if (widget.isMetric) { // Was metric, now converting to imperial
+      heightInCm = currentHeight;
+      weightInKg = currentWeight;
+    } else { // Was imperial, now converting to metric
+      heightInCm = currentHeight * _inToCm;
+      weightInKg = currentWeight * _lbsToKg;
+    }
+
+    // Notify parent of the new unit and the converted values
+    widget.onUnitChanged!(isNowMetric);
+    widget.onChanged(heightInCm, weightInKg);
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +206,7 @@ class _HeightWeightStepState extends State<HeightWeightStep> {
               ),
             ),
           const SizedBox(height: 32),
-          
+
           Expanded(
             child: Row(
               children: [
@@ -158,10 +231,10 @@ class _HeightWeightStepState extends State<HeightWeightStep> {
                           children: widget.isMetric
                               ? _cmValues.map((h) => Center(child: Text('$h cm', style: AppTextStyles.h3))).toList()
                               : _inValues.map((h) {
-                                  final ft = h ~/ 12;
-                                  final inch = h % 12;
-                                  return Center(child: Text('$ft\' $inch"', style: AppTextStyles.h3));
-                                }).toList(),
+                            final ft = h ~/ 12;
+                            final inch = h % 12;
+                            return Center(child: Text('$ft\' $inch"', style: AppTextStyles.h3));
+                          }).toList(),
                         ),
                       ),
                     ],
@@ -205,8 +278,8 @@ class _HeightWeightStepState extends State<HeightWeightStep> {
   Widget _buildToggleOption(String text, bool isSelected) {
     return GestureDetector(
       onTap: () {
-        if (!isSelected && widget.onUnitChanged != null) {
-          widget.onUnitChanged!(text == 'Metric');
+        if (!isSelected) {
+          _handleUnitChange(text == 'Metric');
         }
       },
       child: Container(
