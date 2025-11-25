@@ -3,17 +3,17 @@ import 'package:google_fonts/google_fonts.dart';
 
 // --- COLORS ---
 class AppColors {
-  static const Color background = Color(0xFFF2F4F7); // Soft pastel/greyish background
+  static const Color background = Color(0xFFF5F1ED); // Beige
   static const Color card = Color(0xFFFFFFFF);
-  static const Color primaryText = Color(0xFF111827);
+  static const Color primaryText = Color(0xFF000000); // Black
   static const Color secondaryText = Color(0xFF6B7280);
-  static const Color accent = Color(0xFF111827); // Black accent
+  static const Color accent = Color(0xFF000000); // Black accent
   static Color shadow = Colors.black.withOpacity(0.06);
   static const Color water = Color(0xFF60A5FA); 
   static const Color steps = Color(0xFF34D399); 
   static const Color textPrimary = primaryText;
 
-  static const Color primary = Color(0xFF111827); // Added primary color definition
+  static const Color primary = Color(0xFF000000); // Black
 }
 
 // --- TEXT STYLES ---
@@ -96,7 +96,7 @@ class AppTextStyles {
 // --- RADII & SHADOWS ---
 class AppRadii {
   static const double bigCard = 28.0; // Slightly more rounded
-  static const double smallCard = 20.0;
+  static const double smallCard = 16.0;
 
   static const double card = 24.0;
 }

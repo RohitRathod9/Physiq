@@ -177,4 +177,45 @@ class PlanGenerator {
       'trace': trace.toString(),
     };
   }
+  /// Generates a plan locally using the provided profile map.
+  /// Profile map should contain: gender, birthYear, heightCm, weightKg, activityLevel, goal.
+  static Map<String, dynamic> generateLocalPlan(Map<String, dynamic> profile) {
+    final String gender = profile['gender'] ?? 'male';
+    final int birthYear = profile['birthYear'] ?? 2000;
+    final int age = DateTime.now().year - birthYear;
+    final double heightCm = (profile['heightCm'] as num?)?.toDouble() ?? 170.0;
+    final double weightKg = (profile['weightKg'] as num?)?.toDouble() ?? 70.0;
+    final String activityLevel = profile['activityLevel'] ?? 'Moderately active';
+    final String goal = profile['goal'] ?? 'Maintain';
+
+    double activityMultiplier;
+    switch (activityLevel.toLowerCase()) {
+      case 'sedentary':
+        activityMultiplier = 1.2;
+        break;
+      case 'lightly active':
+        activityMultiplier = 1.375;
+        break;
+      case 'moderately active':
+        activityMultiplier = 1.55;
+        break;
+      case 'very active':
+        activityMultiplier = 1.725;
+        break;
+      case 'athletic':
+        activityMultiplier = 1.9;
+        break;
+      default:
+        activityMultiplier = 1.2;
+    }
+
+    return generatePlan(
+      gender: gender,
+      age: age,
+      heightCm: heightCm,
+      weightKg: weightKg,
+      activityMultiplier: activityMultiplier,
+      goal: goal,
+    );
+  }
 }

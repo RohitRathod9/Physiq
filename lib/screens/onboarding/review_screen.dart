@@ -1,8 +1,9 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:physiq/providers/onboarding_provider.dart';
 import 'package:physiq/theme/design_system.dart';
-import 'package:physiq/viewmodels/onboarding_viewmodel.dart';
 
 class ReviewScreen extends ConsumerStatefulWidget {
   const ReviewScreen({super.key});
@@ -15,46 +16,43 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   late TextEditingController _proteinController;
   late TextEditingController _fatController;
   late TextEditingController _carbsController;
+  bool _initialized = false;
 
   @override
-  void initState() {
-    super.initState();
-    final plan = ref.read(onboardingProvider).calculatedPlan;
-    // Safely handle null values by defaulting to '0'
-    _proteinController = TextEditingController(
-      text: (plan?['proteinG'] ?? 0).toString(),
-    );
-    _fatController = TextEditingController(
-      text: (plan?['fatG'] ?? 0).toString(),
-    );
-    _carbsController = TextEditingController(
-      text: (plan?['carbsG'] ?? 0).toString(),
-    );
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+       final store = ref.read(onboardingProvider);
+       final plan = store.data['currentPlan'] as Map<String, dynamic>?;
+       
+       _proteinController = TextEditingController(text: (plan?['proteinG'] ?? 0).toString());
+       _fatController = TextEditingController(text: (plan?['fatG'] ?? 0).toString());
+       _carbsController = TextEditingController(text: (plan?['carbsG'] ?? 0).toString());
+       _initialized = true;
+    }
   }
 
   void _recalc() {
-    final p = int.tryParse(_proteinController.text) ?? 0;
-    final f = int.tryParse(_fatController.text) ?? 0;
-    final c = int.tryParse(_carbsController.text) ?? 0;
-
-    // Update state
-    ref
-        .read(onboardingProvider.notifier)
-        .updateMacroSplit(proteinG: p, fatG: f, carbsG: c);
-
     setState(() {});
+  }
+
+  void _onSave() {
+    final store = ref.read(onboardingProvider);
+    final plan = Map<String, dynamic>.from(store.data['currentPlan'] ?? {});
+    
+    plan['proteinG'] = int.tryParse(_proteinController.text) ?? 0;
+    plan['fatG'] = int.tryParse(_fatController.text) ?? 0;
+    plan['carbsG'] = int.tryParse(_carbsController.text) ?? 0;
+    
+    // Recalculate calories
+    plan['goalCalories'] = (plan['proteinG'] * 4) + (plan['fatG'] * 9) + (plan['carbsG'] * 4);
+    
+    store.saveStepData('currentPlan', plan);
+    context.push('/onboarding/motivational-quote');
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(onboardingProvider);
-    final plan = state.calculatedPlan;
-
-    if (plan == null) {
-      return const Scaffold(body: Center(child: Text('No plan generated.')));
-    }
-
-    // Calculate total calories from current inputs
     final p = int.tryParse(_proteinController.text) ?? 0;
     final f = int.tryParse(_fatController.text) ?? 0;
     final c = int.tryParse(_carbsController.text) ?? 0;
@@ -67,6 +65,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
+        leading: BackButton(color: Colors.black),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -77,7 +76,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(AppRadii.card),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
@@ -92,10 +91,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                   const SizedBox(height: 8),
                   Text(
                     '$totalCal',
-                    style: AppTextStyles.h1.copyWith(
-                      fontSize: 48,
-                      color: AppColors.primary,
-                    ),
+                    style: AppTextStyles.largeNumber.copyWith(fontSize: 48),
                   ),
                   const Text('kcal', style: TextStyle(color: Colors.grey)),
                 ],
@@ -115,19 +111,15 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                onPressed: () {
-                  context.go('/paywall');
-                },
-                child: Text(
-                  'Save & Continue',
-                  style: AppTextStyles.button.copyWith(color: Colors.white),
-                ),
+                onPressed: _onSave,
+                child: const Text('Confirm & Continue'),
               ),
             ),
           ],
@@ -145,7 +137,14 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -159,6 +158,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
               controller: controller,
               keyboardType: TextInputType.number,
               textAlign: TextAlign.end,
+              style: AppTextStyles.bodyBold,
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 suffixText: 'g',
