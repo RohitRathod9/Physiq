@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
-import 'package:physiq/utils/design_system.dart';
+import 'package:physiq/theme/design_system.dart';
 
 class CalorieAndMacrosPage extends StatelessWidget {
   final Map<String, dynamic> dailySummary;
@@ -20,154 +19,157 @@ class CalorieAndMacrosPage extends StatelessWidget {
     // Macros
     final int carbsGoal = (dailySummary['carbsGoal'] ?? 100).toInt();
     final int carbsConsumed = (dailySummary['carbsConsumed'] ?? 0).toInt();
-    final int carbsLeft = (carbsGoal - carbsConsumed).clamp(0, 999);
     final double carbsPercent = (carbsGoal > 0) ? (carbsConsumed / carbsGoal).clamp(0.0, 1.0) : 0.0;
 
     final int proteinGoal = (dailySummary['proteinGoal'] ?? 100).toInt();
     final int proteinConsumed = (dailySummary['proteinConsumed'] ?? 0).toInt();
-    final int proteinLeft = (proteinGoal - proteinConsumed).clamp(0, 999);
     final double proteinPercent = (proteinGoal > 0) ? (proteinConsumed / proteinGoal).clamp(0.0, 1.0) : 0.0;
 
     final int fatGoal = (dailySummary['fatGoal'] ?? 50).toInt();
     final int fatConsumed = (dailySummary['fatConsumed'] ?? 0).toInt();
-    final int fatLeft = (fatGoal - fatConsumed).clamp(0, 999);
     final double fatPercent = (fatGoal > 0) ? (fatConsumed / fatGoal).clamp(0.0, 1.0) : 0.0;
 
     return Column(
       children: [
         // --- Main Calorie Card ---
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(AppRadii.bigCard),
-            boxShadow: [AppShadows.card],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '$caloriesLeft',
-                    style: AppTextStyles.largeNumber,
-                  ),
-                  Text(
-                    'Calories left',
-                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primaryText),
-                  ),
-                ],
-              ),
-              CircularPercentIndicator(
-                radius: 50.0, // 100 diameter
-                lineWidth: 12.0,
-                animation: true,
-                percent: caloriesPercent,
-                center: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+        Expanded(
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0), // Padding handled by alignment
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(AppRadii.bigCard),
+              boxShadow: [AppShadows.card],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Left Side: Calories Left
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '$caloriesLeft',
+                        style: AppTextStyles.largeNumber.copyWith(fontSize: 18),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'EATEN',
+                        style: AppTextStyles.smallLabel,
+                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),
-                  child: const Center(
-                    child: Icon(Icons.local_fire_department_rounded, color: AppColors.primaryText, size: 24),
+                ),
+                
+                // Center: Progress Ring
+                CircularPercentIndicator(
+                  radius: 88.0, // 140 diameter
+                  lineWidth: 15.0,
+                  animation: true,
+                  percent: caloriesPercent,
+                  center: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.local_fire_department_rounded, color: AppColors.primaryText, size: 28),
+                    ),
+                  ),
+                  circularStrokeCap: CircularStrokeCap.round,
+                  backgroundColor: const Color(0xFFF3F4F6),
+                  progressColor: Colors.grey.shade300,
+                ),
+
+                // Right Side: Calories Burned
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '$caloriesConsumed',
+                        style: AppTextStyles.largeNumber.copyWith(fontSize: 18),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'BURNED',
+                        style: AppTextStyles.smallLabel,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
-                circularStrokeCap: CircularStrokeCap.round,
-                backgroundColor: const Color(0xFFF3F4F6),
-                progressColor: Colors.grey.shade300, // Placeholder color, adjust if needed
-                // To match the image exactly, the ring is greyish/white and maybe has a gradient or specific color.
-                // The image shows a very light grey ring.
-              ),
-            ],
+              ],
+            ),
           ),
         ),
 
         const SizedBox(height: 16),
 
         // --- Macro Cards ---
-        SizedBox(
-          height: 160, // Adjust height as needed
-          child: PageView(
-            physics: const BouncingScrollPhysics(),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Row(
             children: [
-              // Page 1: Main Macros
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildVerticalMacroCard(
-                      label: 'Protein',
-                      leftValue: '${proteinLeft}g',
-                      percent: proteinPercent,
-                      icon: Icons.restaurant, // Placeholder icon
-                      color: const Color(0xFFF87171), // Red/Pink
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildVerticalMacroCard(
-                      label: 'Carbs',
-                      leftValue: '${carbsLeft}g',
-                      percent: carbsPercent,
-                      icon: Icons.grass, // Placeholder icon
-                      color: const Color(0xFFFACC15), // Yellow
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildVerticalMacroCard(
-                      label: 'Fats',
-                      leftValue: '${fatLeft}g',
-                      percent: fatPercent,
-                      icon: Icons.water_drop, // Placeholder icon
-                      color: const Color(0xFF60A5FA), // Blue
-                    ),
-                  ),
-                ],
+              _buildVerticalMacroCard(
+                label: 'Protein',
+                value: '${proteinConsumed}g',
+                percent: proteinPercent,
+                icon: Icons.restaurant,
+                color: const Color(0xFFF87171), // Red/Pink
               ),
-              // Page 2: Micro Nutrients (Example)
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildVerticalMacroCard(
-                      label: 'Sodium',
-                      leftValue: '${(dailySummary['sodiumConsumed'] ?? 0).toInt()}mg',
-                      percent: 0.5,
-                      icon: Icons.grain,
-                      color: const Color(0xFFA78BFA),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildVerticalMacroCard(
-                      label: 'Sugar',
-                      leftValue: '${(dailySummary['sugarConsumed'] ?? 0).toInt()}g',
-                      percent: 0.3,
-                      icon: Icons.cake,
-                      color: const Color(0xFFF472B6),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildVerticalMacroCard(
-                      label: 'Fiber',
-                      leftValue: '${(dailySummary['fiberConsumed'] ?? 0).toInt()}g',
-                      percent: 0.7,
-                      icon: Icons.eco,
-                      color: const Color(0xFF34D399),
-                    ),
-                  ),
-                ],
+              const SizedBox(width: 12),
+              _buildVerticalMacroCard(
+                label: 'Carbs',
+                value: '${carbsConsumed}g',
+                percent: carbsPercent,
+                icon: Icons.grass,
+                color: const Color(0xFFFACC15), // Yellow
+              ),
+              const SizedBox(width: 12),
+              _buildVerticalMacroCard(
+                label: 'Fats',
+                value: '${fatConsumed}g',
+                percent: fatPercent,
+                icon: Icons.water_drop,
+                color: const Color(0xFF60A5FA), // Blue
+              ),
+              const SizedBox(width: 12),
+              _buildVerticalMacroCard(
+                label: 'Sodium',
+                value: '${(dailySummary['sodiumConsumed'] ?? 0).toInt()}mg',
+                percent: 0.5, // Placeholder
+                icon: Icons.grain,
+                color: const Color(0xFFA78BFA),
+              ),
+              const SizedBox(width: 12),
+              _buildVerticalMacroCard(
+                label: 'Sugar',
+                value: '${(dailySummary['sugarConsumed'] ?? 0).toInt()}g',
+                percent: 0.3, // Placeholder
+                icon: Icons.cake,
+                color: const Color(0xFFF472B6),
+              ),
+              const SizedBox(width: 12),
+              _buildVerticalMacroCard(
+                label: 'Fiber',
+                value: '${(dailySummary['fiberConsumed'] ?? 0).toInt()}g',
+                percent: 0.7, // Placeholder
+                icon: Icons.eco,
+                color: const Color(0xFF34D399),
               ),
             ],
           ),
@@ -178,66 +180,51 @@ class CalorieAndMacrosPage extends StatelessWidget {
 
   Widget _buildVerticalMacroCard({
     required String label,
-    required String leftValue,
+    required String value,
     required double percent,
     required IconData icon,
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: 110, // Increased width
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8), // Reduced vertical padding
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppRadii.smallCard),
         boxShadow: [AppShadows.card],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                leftValue,
-                style: AppTextStyles.heading2.copyWith(fontSize: 18),
+          CircularPercentIndicator(
+            radius: 30.0, // Restored size
+            lineWidth: 6.0,
+            animation: true,
+            percent: percent,
+            center: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: 4),
-              RichText(
-                text: TextSpan(
-                  children: [
-                    TextSpan(
-                      text: label,
-                      style: AppTextStyles.bodyMedium.copyWith(fontSize: 14),
-                    ),
-                    TextSpan(
-                      text: ' left',
-                      style: AppTextStyles.bodyMedium.copyWith(fontSize: 14, color: AppColors.secondaryText),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          Align(
-            alignment: Alignment.center,
-            child: CircularPercentIndicator(
-              radius: 30.0, // 60 diameter
-              lineWidth: 6.0,
-              animation: true,
-              percent: percent,
-              center: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, size: 14, color: color),
-              ),
-              circularStrokeCap: CircularStrokeCap.round,
-              backgroundColor: const Color(0xFFF3F4F6),
-              progressColor: color.withOpacity(0.3), // Softer color for ring
+              child: Icon(icon, size: 14, color: color),
             ),
+            circularStrokeCap: CircularStrokeCap.round,
+            backgroundColor: const Color(0xFFF3F4F6),
+            progressColor: color.withOpacity(0.5),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: AppTextStyles.bodyBold.copyWith(fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: AppTextStyles.smallLabel.copyWith(fontSize: 12),
+            textAlign: TextAlign.center,
           ),
         ],
       ),

@@ -61,7 +61,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     DateSlider(onDateSelected: homeViewModel.selectDate),
                     const SizedBox(height: 16), // Reduced spacing
                     SizedBox(
-                      height: 330, // Reduced height to show more meals
+                      height: 380, // Adjusted height for better balance
                       child: homeState.dailySummary != null
                           ? PageView(
                               controller: _pageController,
