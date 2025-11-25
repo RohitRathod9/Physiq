@@ -48,111 +48,90 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
-            // CARD 1: Invite & Leaderboard
-            SettingsCard(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  SettingsPillButton(
-                    text: 'Invite Friends',
-                    icon: Icons.person_add,
-                    isPrimary: true,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InviteFriendsPage())),
-                  ),
-                  const SizedBox(width: 16),
-                  SettingsPillButton(
-                    text: 'Leaderboard',
-                    icon: Icons.leaderboard,
-                    isPrimary: false,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaderboardPage())),
-                  ),
-                ],
-              ),
+            // Invite Banner
+            InviteBannerCard(
+              onInviteTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InviteFriendsPage())),
+            ),
+            
+            // Leaderboard Button
+            LeaderboardCard(
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaderboardPage())),
             ),
 
-            // CARD 2: Personal & Preferences
+            const SizedBox(height: 8),
+
+            // Personal & Preferences
             SettingsCard(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              child: Column(
-                children: [
-                  SettingsRow(
-                    icon: Icons.person_outline,
-                    title: 'Personal details',
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalDetailsPage())),
+              padding: EdgeInsets.zero,
+              child: _buildSettingsList([
+                SettingsRow(
+                  icon: Icons.person_outline,
+                  title: 'Personal details',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalDetailsPage())),
+                ),
+                SettingsRow(
+                  icon: Icons.pie_chart_outline,
+                  title: 'Adjust macronutrients',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MacroAdjustmentScreen())),
+                ),
+                SettingsRow(
+                  icon: Icons.language,
+                  title: 'Language',
+                  subtitle: language,
+                  onTap: () => _showLanguageDialog(language),
+                ),
+                SettingsRow(
+                  icon: isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                  title: 'Dark Mode',
+                  showChevron: false,
+                  trailing: Switch(
+                    value: isDarkMode,
+                    activeColor: AppColors.primary,
+                    onChanged: (val) {
+                      ref.read(preferencesProvider.notifier).setThemeMode(val ? ThemeMode.dark : ThemeMode.light);
+                    },
                   ),
-                  _buildDivider(),
-                  SettingsRow(
-                    icon: Icons.pie_chart_outline,
-                    title: 'Adjust macronutrients',
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MacroAdjustmentScreen())),
-                  ),
-                  _buildDivider(),
-                  SettingsRow(
-                    icon: Icons.language,
-                    title: 'Language',
-                    subtitle: language,
-                    onTap: () => _showLanguageDialog(language),
-                  ),
-                  _buildDivider(),
-                  SettingsRow(
-                    icon: isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                    title: 'Dark Mode',
-                    showChevron: false,
-                    trailing: Switch(
-                      value: isDarkMode,
-                      activeColor: AppColors.primary,
-                      onChanged: (val) {
-                        ref.read(preferencesProvider.notifier).setThemeMode(val ? ThemeMode.dark : ThemeMode.light);
-                      },
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ]),
             ),
 
-            // CARD 3: Legal, Support & Delete
+            // Legal, Support & Delete
             SettingsCard(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              child: Column(
-                children: [
-                  SettingsRow(
-                    icon: Icons.description_outlined,
-                    title: 'Terms & Conditions',
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsPage())),
-                  ),
-                  _buildDivider(),
-                  SettingsRow(
-                    icon: Icons.privacy_tip_outlined,
-                    title: 'Privacy Policy',
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPage())),
-                  ),
-                  _buildDivider(),
-                  SettingsRow(
-                    icon: Icons.mail_outline,
-                    title: 'Support Email',
-                    onTap: _sendSupportEmail,
-                  ),
-                  _buildDivider(),
-                  SettingsRow(
-                    icon: Icons.feedback_outlined,
-                    title: 'Feature Requests',
-                    onTap: _showFeatureRequestDialog,
-                  ),
-                  _buildDivider(),
-                  SettingsRow(
-                    icon: Icons.delete_outline,
-                    title: 'Delete Account',
-                    titleColor: Colors.red,
-                    showChevron: false,
-                    onTap: _confirmDeleteAccount,
-                  ),
-                ],
-              ),
+              padding: EdgeInsets.zero,
+              child: _buildSettingsList([
+                SettingsRow(
+                  icon: Icons.description_outlined,
+                  title: 'Terms & Conditions',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsPage())),
+                ),
+                SettingsRow(
+                  icon: Icons.privacy_tip_outlined,
+                  title: 'Privacy Policy',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPage())),
+                ),
+                SettingsRow(
+                  icon: Icons.mail_outline,
+                  title: 'Support Email',
+                  onTap: _sendSupportEmail,
+                ),
+                SettingsRow(
+                  icon: Icons.feedback_outlined,
+                  title: 'Feature Requests',
+                  onTap: _showFeatureRequestDialog,
+                ),
+                SettingsRow(
+                  icon: Icons.delete_outline,
+                  title: 'Delete Account',
+                  titleColor: Colors.red,
+                  showChevron: false,
+                  onTap: _confirmDeleteAccount,
+                ),
+              ]),
             ),
 
-            // CARD 4: Logout
+            // Logout
             SettingsCard(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              padding: EdgeInsets.zero,
               child: SettingsRow(
                 icon: Icons.logout,
                 title: 'Log out',
@@ -169,14 +148,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 return Text('Version $version', style: AppTextStyles.smallLabel);
               },
             ),
+            const SizedBox(height: 80), // Bottom padding
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // TODO: keep existing logic or add action
+        },
+        backgroundColor: const Color(0xFF121217),
+        elevation: 6,
+        child: const Icon(Icons.add, color: Colors.white, size: 28),
       ),
     );
   }
 
-  Widget _buildDivider() {
-    return const Divider(height: 1, color: Color(0xFFF3F4F6), thickness: 1);
+  Widget _buildSettingsList(List<Widget> rows) {
+    final List<Widget> children = [];
+    for (int i = 0; i < rows.length; i++) {
+      children.add(rows[i]);
+      if (i < rows.length - 1) {
+        children.add(const Divider(height: 1, color: Color(0xFFF1F1F3), indent: 16, endIndent: 16));
+      }
+    }
+    return Column(children: children);
   }
 
   void _showLanguageDialog(String currentLang) {
